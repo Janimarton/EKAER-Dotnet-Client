@@ -30,7 +30,6 @@ namespace EKAER.Validation
     {
         public static void Validate(this QueryParamsType queryParams)
         {
-
             if (queryParams == null) throw new ArgumentNullException("queryParams");
             if (queryParams.InsertFromDate > DateTime.Now) throw new ArgumentOutOfRangeException("InsertFromDate");
             if (queryParams.InsertFromDate > queryParams.InsertToDate) throw new ArgumentException("InsertFromDate > InsertToDate");

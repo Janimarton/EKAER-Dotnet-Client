@@ -136,14 +136,45 @@ namespace EKAER.Client
 
         public void LocalValidate(TradeCardType tradeCard)
         {
-            if (!Validators.IsValidVatNumber(tradeCard.SellerVatNumber))
-                throw new ArgumentException("Seller VAT number is not valid");
-            if (!Validators.IsValidVatNumber(tradeCard.DestinationVatNumber))
-                throw new ArgumentException("Destination VAT number is not valid");
-            if (tradeCard.SellerCountry == "HU" && tradeCard.SellerVatNumber.Length != 8)
-                throw new ArgumentException(string.Format("{0} is not a valid hungarian VAT number", tradeCard.SellerVatNumber));
-            if (tradeCard.DestinationCountry == "HU" && tradeCard.DestinationVatNumber.Length != 8)
-                throw new ArgumentException(string.Format("{0} is not a valid hungarian VAT number", tradeCard.SellerVatNumber));
+            ValidateVATNumbers(tradeCard);
+            ValidateTradeTypes(tradeCard);
+            ValidateNames(tradeCard);
+            ValidateCarrier(tradeCard);
+            ValidateTradeCardItems(tradeCard);
+        }
+
+        private static void ValidateTradeCardItems(TradeCardType tradeCard)
+        {
+            if (tradeCard.Items != null)
+            {
+                foreach (var item in tradeCard.Items)
+                {
+                    if (item.Value < 0) throw new ArgumentOutOfRangeException("TradeCardItem.Value must be greater or equal to zero");
+                    if (item.Value > 0) item.ValueSpecified = true;
+                    if (item.Weight < 0) throw new ArgumentOutOfRangeException("Weight must be greater or equal to zero");
+                    if (string.IsNullOrEmpty(item.ProductName)) throw new ArgumentNullException("ProductName");
+                    if (string.IsNullOrEmpty(item.ProductVtsz)) throw new ArgumentNullException("ProductVTSZ");
+                    if (!Validators.IsValidVTSZ(item.ProductVtsz)) throw new ArgumentException("ProductVTSZ");
+                }
+            }
+        }
+
+        private static void ValidateCarrier(TradeCardType tradeCard)
+        {
+            if (tradeCard.ModByCarrierEnabled && string.IsNullOrEmpty(tradeCard.Carrier))
+                throw new ArgumentNullException("If ModByCarrierEnabled then Carrier must not be null");
+        }
+
+        private static void ValidateNames(TradeCardType tradeCard)
+        {
+            if (string.IsNullOrEmpty(tradeCard.SellerName))
+                throw new ArgumentNullException("SellerName");
+            if (string.IsNullOrEmpty(tradeCard.DestinationName))
+                throw new ArgumentNullException("DestinationName");
+        }
+
+        private static void ValidateTradeTypes(TradeCardType tradeCard)
+        {
             if (tradeCard.TradeType == Schema.Common.TradeType.D || tradeCard.TradeType == Schema.Common.TradeType.E)
             {
                 if (string.IsNullOrEmpty(tradeCard.SellerCountry))
@@ -158,30 +189,23 @@ namespace EKAER.Client
                 if (string.IsNullOrEmpty(tradeCard.DestinationAddress))
                     throw new ArgumentException("Destination address required when TradeType is Import or Domestic");
             }
-            if(tradeCard.TradeType == Schema.Common.TradeType.I && tradeCard.SellerCountry.Equals("HU"))            
+            if (tradeCard.TradeType == Schema.Common.TradeType.I && tradeCard.SellerCountry.Equals("HU"))
                 throw new ArgumentException("Seller country must not be HU when TradeType is import");
-            
-            if(tradeCard.TradeType == Schema.Common.TradeType.E && !tradeCard.SellerCountry.Equals("HU"))
-                throw new ArgumentException("Seller country must be HU when tradeType is Export");
 
-            if (string.IsNullOrEmpty(tradeCard.SellerName))
-                throw new ArgumentNullException("SellerName");
-            if (string.IsNullOrEmpty(tradeCard.DestinationName))
-                throw new ArgumentNullException("DestinationName");
-            if (tradeCard.ModByCarrierEnabled && string.IsNullOrEmpty(tradeCard.Carrier))
-                throw new ArgumentNullException("If ModByCarrierEnabled then Carrier must not be null");
-            if (tradeCard.Items != null)
-            {
-                foreach(var item in tradeCard.Items)
-                {
-                    if (item.Value < 0) throw new ArgumentOutOfRangeException("TradeCardItem.Value must be greater or equal to zero");
-                    if (item.Value > 0) item.ValueSpecified = true;
-                    if (item.Weight < 0) throw new ArgumentOutOfRangeException("Weight must be greater or equal to zero");
-                    if (string.IsNullOrEmpty(item.ProductName)) throw new ArgumentNullException("ProductName");
-                    if (string.IsNullOrEmpty(item.ProductVtsz)) throw new ArgumentNullException("ProductVTSZ");
-                    if (!Validators.IsValidVTSZ(item.ProductVtsz)) throw new ArgumentException("ProductVTSZ");
-                }
-            }
+            if (tradeCard.TradeType == Schema.Common.TradeType.E && !tradeCard.SellerCountry.Equals("HU"))
+                throw new ArgumentException("Seller country must be HU when tradeType is Export");
+        }
+
+        private static void ValidateVATNumbers(TradeCardType tradeCard)
+        {
+            if (!Validators.IsValidVatNumber(tradeCard.SellerVatNumber))
+                throw new ArgumentException("Seller VAT number is not valid");
+            if (!Validators.IsValidVatNumber(tradeCard.DestinationVatNumber))
+                throw new ArgumentException("Destination VAT number is not valid");
+            if (tradeCard.SellerCountry == "HU" && tradeCard.SellerVatNumber.Length != 8)
+                throw new ArgumentException(string.Format("{0} is not a valid hungarian VAT number", tradeCard.SellerVatNumber));
+            if (tradeCard.DestinationCountry == "HU" && tradeCard.DestinationVatNumber.Length != 8)
+                throw new ArgumentException(string.Format("{0} is not a valid hungarian VAT number", tradeCard.SellerVatNumber));
         }
 
         public TradeCardInfoType CreateTradeCard(TradeCardType tradeCard)
